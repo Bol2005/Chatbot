@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Team1 Chatbot</title>
+    <link rel="icon" href="./image/rupp.png" type="image/png" />
+    <link rel="stylesheet" href="index.css">
+</head>
+<body>
+    <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark/light mode">🌙</button>
+    <div class="container">
+        <div class="logo-title">
+            <img src="./image/rupp.png" alt="Logo" class="logo">
+            <h1>Welcome to<br>Team1 Chatbot</h1>
+        </div>
+        <div class="button-group">
+            <a class="btn" href="./getstart.html">GET START</a>
+            <div class="separator">
+                <hr><span>Or</span><hr>
+            </div>
+            <a class="btn" href="./ourteam.html">OUR TEAM</a>
+        </div>
+    </div>
+    <script>
+      // Theme toggle logic
+      const themeToggle = document.getElementById('themeToggle');
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      let darkMode = localStorage.getItem('index-theme') === 'dark' || (!localStorage.getItem('index-theme') && prefersDark);
+
+      function setTheme(dark) {
+        document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+        themeToggle.textContent = dark ? '☀️' : '🌙';
+        localStorage.setItem('index-theme', dark ? 'dark' : 'light');
+      }
+      setTheme(darkMode);
+
+      themeToggle.addEventListener('click', () => {
+        darkMode = !darkMode;
+        setTheme(darkMode);
+      });
+    </script>
+</body>
+</html>

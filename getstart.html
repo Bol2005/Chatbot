@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="./getstart.css" />
+    <!-- Noto Sans Khmer font for Khmer language support -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+Khmer:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="icon" href="./image/rupp.png" type="image/png" />
+    <title>Team1 Chatbot</title>
+  </head>
+  <body>
+    <style>
+      /* Enhance bot message readability for lists and points */
+      .message.bot .message-content ul,
+      .message.bot .message-content ol {
+        margin: 0.5em 0 0.5em 1.5em;
+        padding-left: 1.2em;
+      }
+      .message.bot .message-content li {
+        margin-bottom: 0.3em;
+        line-height: 1.6;
+      }
+      .message.bot .message-content {
+        white-space: pre-line;
+      }
+    </style>
+    <!-- Theme Toggle Button -->
+    <button
+      class="theme-toggle"
+      id="themeToggle"
+      aria-label="Toggle dark/light mode"
+    >
+      🌙
+    </button>
+    <!-- Fixed Header -->
+    <header class="header">
+      <a href="./index.html">
+        <img src="./image/rupp.png" alt="ChatBot RUPP" class="logo" />
+      </a>
+    </header>
+    <!-- Main Container -->
+    <div class="container">
+      <!-- Chat Container -->
+      <div class="chat-container">
+        <!-- Messages Area -->
+        <div class="messages-area" id="messagesArea">
+          <div class="welcome-message">
+            👋 Welcome to Team1 Chatbot! Start a conversation by typing a
+            message below.
+          </div>
+          <!-- Typing Indicator -->
+          <div
+            class="typing-indicator"
+            id="typingIndicator"
+            style="display: none"
+          >
+            <div class="message-avatar">🤖</div>
+            <div class="typing-dots">
+              <div class="typing-dot"></div>
+              <div class="typing-dot"></div>
+              <div class="typing-dot"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Input Container -->
+      <div class="input-container">
+        <input
+          type="text"
+          class="message-input"
+          id="messageInput"
+          placeholder="Type your message here..."
+          maxlength="500"
+        />
+        <button class="send-button" id="sendButton">
+          <span>Send</span>
+          <span>📤</span>
+        </button>
+      </div>
+    </div>
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        // Theme toggle logic
+        const themeToggle = document.getElementById("themeToggle");
+        const prefersDark = window.matchMedia(
+          "(prefers-color-scheme: dark)"
+        ).matches;
+        let darkMode =
+          localStorage.getItem("chatbot-theme") === "dark" ||
+          (!localStorage.getItem("chatbot-theme") && prefersDark);
+
+        function setTheme(dark) {
+          document.documentElement.setAttribute(
+            "data-theme",
+            dark ? "dark" : "light"
+          );
+          themeToggle.textContent = dark ? "☀️" : "🌙";
+          localStorage.setItem("chatbot-theme", dark ? "dark" : "light");
+        }
+        setTheme(darkMode);
+
+        themeToggle.addEventListener("click", () => {
+          darkMode = !darkMode;
+          setTheme(darkMode);
+        });
+
+        // ChatBot class
+        class ChatBot {
+          constructor() {
+            this.messagesArea = document.getElementById("messagesArea");
+            this.messageInput = document.getElementById("messageInput");
+            this.sendButton = document.getElementById("sendButton");
+            this.typingIndicator = document.getElementById("typingIndicator");
+
+            this.apiUrl = "https://openrouter.ai/api/v1/chat/completions";
+            this.apiKey =
+              "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";
+            this.isLoading = false;
+
+            this.initializeEventListeners();
+          }
+
+          initializeEventListeners() {
+            this.sendButton.addEventListener("click", () => this.handleSend());
+            this.messageInput.addEventListener("keydown", (e) => {
+              if (e.key === "Enter") this.handleSend();
+            });
+          }
+
+          async handleSend() {
+            const message = this.messageInput.value.trim();
+            if (!message || this.isLoading) return;
+            this.appendMessage(message, "user");
+            this.messageInput.value = "";
+            this.showTyping(true);
+            this.isLoading = true;
+            try {
+              const reply = await this.fetchBotReply(message);
+              this.appendMessage(reply, "bot");
+            } catch (e) {
+              this.appendMessage(
+                "Sorry, I couldn't process your request.",
+                "bot"
+              );
+            }
+            this.showTyping(false);
+            this.isLoading = false;
+          }
+
+          appendMessage(text, sender) {
+            const msgDiv = document.createElement("div");
+            msgDiv.className = `message ${sender}`;
+            let isKhmer = this.containsKhmer(text);
+            let contentClass =
+              "message-content" + (isKhmer ? " khmer-text" : "");
+            if (sender === "bot") {
+              // Convert Markdown to HTML for bot replies
+              let htmlContent = this.markdownToHtml(text);
+              msgDiv.innerHTML = `
+                <div class="message-avatar">🤖</div>
+                <div class="${contentClass}">${htmlContent}</div>
+              `;
+            } else {
+              msgDiv.innerHTML = `
+                <div class="message-avatar">🧑</div>
+                <div class="${contentClass}">${this.escapeHTML(text)}</div>
+              `;
+            }
+            this.messagesArea.appendChild(msgDiv);
+            this.messagesArea.scrollTop = this.messagesArea.scrollHeight;
+          }
+
+          // Simple Markdown to HTML converter for basic formatting
+          markdownToHtml(md) {
+            let html = this.escapeHTML(md);
+            // Headings
+            html = html.replace(/^###### (.*)$/gm, "<h6>$1</h6>");
+            html = html.replace(/^##### (.*)$/gm, "<h5>$1</h5>");
+            html = html.replace(/^#### (.*)$/gm, "<h4>$1</h4>");
+            html = html.replace(/^### (.*)$/gm, "<h3>$1</h3>");
+            html = html.replace(/^## (.*)$/gm, "<h2>$1</h2>");
+            html = html.replace(/^# (.*)$/gm, "<h1>$1</h1>");
+            // Bold **text** or __text__
+            html = html.replace(/\*\*(.*?)\*\*/g, "<b>$1</b>");
+            html = html.replace(/__(.*?)__/g, "<b>$1</b>");
+            // Italic *text* or _text_
+            html = html.replace(/\*(.*?)\*/g, "<i>$1</i>");
+            html = html.replace(/_(.*?)_/g, "<i>$1</i>");
+            // Unordered lists
+            html = html.replace(
+              /(^|\n)\s*\* (.*?)(?=\n|$)/g,
+              "$1<ul><li>$2</li></ul>"
+            );
+            html = html.replace(/(<\/ul>)(<ul>)/g, ""); // Remove duplicate ul
+            // Ordered lists
+            html = html.replace(
+              /(^|\n)\s*\d+\. (.*?)(?=\n|$)/g,
+              "$1<ol><li>$2</li></ol>"
+            );
+            html = html.replace(/(<\/ol>)(<ol>)/g, ""); // Remove duplicate ol
+            // Links [text](url)
+            html = html.replace(
+              /\[([^\]]+)\]\(([^\)]+)\)/g,
+              '<a href="$2" target="_blank">$1</a>'
+            );
+            // Line breaks
+            html = html.replace(/\n/g, "<br>");
+            return html;
+          }
+
+          // Detect if string contains Khmer Unicode block
+          containsKhmer(str) {
+            return /[\u1780-\u17FF]/.test(str);
+          }
+
+          // Detect if string is HTML (simple check)
+          isHTML(str) {
+            return /<[a-z][\s\S]*>/i.test(str);
+          }
+
+          showTyping(show) {
+            if (show) {
+              // Move typing indicator to the end
+              this.messagesArea.appendChild(this.typingIndicator);
+              this.typingIndicator.style.display = "flex";
+              this.messagesArea.scrollTop = this.messagesArea.scrollHeight;
+            } else {
+              this.typingIndicator.style.display = "none";
+            }
+          }
+
+          async fetchBotReply(userMessage) {
+            // Dummy reply for demo; replace with real API call if needed
+            // Uncomment below for real API call
+            const response = await fetch(this.apiUrl, {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${this.apiKey}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                model: "deepseek/deepseek-r1:free",
+                messages: [{ role: "user", content: userMessage }],
+              }),
+            });
+            const data = await response.json();
+            return data.choices[0].message.content.trim();
+
+            // For demo:
+            <!-- return "This is a demo reply from Team1 Chatbot!"; -->
+          }
+          escapeHTML(str) {
+            return str.replace(/[&<>"']/g, function (m) {
+              return {
+                "&": "&amp;",
+                "<": "&lt;",
+                ">": "&gt;",
+                '"': "&quot;",
+                "'": "&#39;",
+              }[m];
+            });
+          }
+        }
+
+        new ChatBot();
+      });
+    </script>
+  </body>
+</html>

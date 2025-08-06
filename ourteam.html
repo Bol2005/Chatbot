@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>My Team Names - Team1 Chatbot</title>
+    <link rel="stylesheet" href="./ourteam.css" />
+    <link rel="icon" href="./image/rupp.png" type="image/png" />
+  </head>
+  <body>
+    <div class="theme-toggle" onclick="toggleTheme()">
+      <span class="theme-icon" id="themeIcon">🌙</span>
+      <span class="theme-text" id="themeText">Dark</span>
+    </div>
+
+    <div class="header">
+      <a href="./index.html">
+        <div class="logo">
+          <img src="./image/rupp.png" alt="Team1 Logo" />
+        </div>
+      </a>
+      <a href="./index.html" class="back-button">← Back to Home</a>
+    </div>
+
+    <div class="main-content">
+      <div class="professor-info">
+        <span class="prof-label">Professor :</span>
+        <span class="prof-name">Ouk Polyvann</span>
+      </div>
+      <br>
+      <h1 class="title">Our Team Names</h1>
+
+      <div class="team-count">
+        <strong>Total Teams: <span id="teamCount">6</span></strong>
+      </div>
+
+      <div class="team-grid" id="teamGrid">
+        <!-- Team cards will be populated by JavaScript -->
+      </div>
+    </div>
+
+    <button class="add-team-btn" onclick="addNewTeam()" title="Add New Team">
+      +
+    </button>
+
+    <script>
+      // Sample team data - just the names
+      const teams = [
+        "Koem sarinrithy",
+        "Kao Vibol",
+        "Kong Cheahuch",
+        "Kheang Mengheng",
+        "Khay Muyly",
+        "Ket Malismonipech",
+      ];
+
+      // Theme management
+      const body = document.body;
+      const themeIcon = document.getElementById("themeIcon");
+      const themeText = document.getElementById("themeText");
+
+      // Check for saved theme preference or default to 'dark'
+      const currentTheme = localStorage.getItem("theme") || "dark";
+      body.setAttribute("data-theme", currentTheme);
+      updateThemeUI(currentTheme);
+
+      function toggleTheme() {
+        // Add switching animation
+        body.classList.add("theme-switching");
+
+        const currentTheme = body.getAttribute("data-theme");
+        const newTheme = currentTheme === "dark" ? "light" : "dark";
+
+        // Update theme
+        body.setAttribute("data-theme", newTheme);
+        localStorage.setItem("theme", newTheme);
+
+        // Update UI
+        updateThemeUI(newTheme);
+
+        // Remove animation class after animation completes
+        setTimeout(() => {
+          body.classList.remove("theme-switching");
+        }, 500);
+      }
+
+      function updateThemeUI(theme) {
+        if (theme === "light") {
+          themeIcon.textContent = "☀️";
+          themeText.textContent = "Light";
+        } else {
+          themeIcon.textContent = "🌙";
+          themeText.textContent = "Dark";
+        }
+      }
+
+      function renderTeams() {
+        const teamGrid = document.getElementById("teamGrid");
+        const teamCount = document.getElementById("teamCount");
+
+        if (teams.length === 0) {
+          teamGrid.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">👥</div>
+                        <h3>No teams yet</h3>
+                        <p>Click the + button to add your first team</p>
+                    </div>
+                `;
+          return;
+        }
+
+        teamCount.textContent = teams.length;
+
+        teamGrid.innerHTML = teams
+          .map(
+            (teamName, index) => `
+                <div class="team-card" onclick="selectTeam('${teamName}')">
+                    <div class="team-name">${teamName}</div>
+                </div>
+            `
+          )
+          .join("");
+      }
+
+      function selectTeam(teamName) {
+        alert(`Selected team: ${teamName}`);
+        // In a real app, you might navigate to the team dashboard
+      }
+
+      function addNewTeam() {
+        const teamName = prompt("Enter new team name:");
+        if (teamName && teamName.trim()) {
+          teams.push(teamName.trim());
+          renderTeams();
+        }
+      }
+
+      // Add keyboard shortcut for theme toggle (Ctrl/Cmd + Shift + T)
+      document.addEventListener("keydown", function (e) {
+        if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === "T") {
+          e.preventDefault();
+          toggleTheme();
+        }
+      });
+
+      // Initialize the page
+      renderTeams();
+    </script>
+  </body>
+</html>
